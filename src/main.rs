@@ -1,4 +1,5 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::post, Json, Router};
+use headless_chrome::types::PrintToPdfOptions;
 use headless_chrome::{Browser, LaunchOptions};
 use renderer::Renderer;
 use serde::Deserialize;
@@ -24,11 +25,13 @@ async fn main() {
 #[derive(Deserialize)]
 struct RawHtmlRequest {
     html: String,
+    options: Option<PrintToPdfOptions>,
 }
 
 #[derive(Deserialize)]
 struct UrlRequest {
     url: String,
+    options: Option<PrintToPdfOptions>,
 }
 
 #[derive(Deserialize)]
@@ -43,8 +46,10 @@ async fn generate(
     Json(payload): Json<GeneratePdfRequest>,
 ) -> Result<Vec<u8>, impl IntoResponse> {
     match payload {
-        GeneratePdfRequest::RawHtml(payload) => renderer.html_to_bytes(&payload.html),
-        GeneratePdfRequest::Url(payload) => renderer.url_to_bytes(&payload.url),
+        GeneratePdfRequest::RawHtml(payload) => {
+            renderer.html_to_bytes(&payload.html, payload.options)
+        }
+        GeneratePdfRequest::Url(payload) => renderer.url_to_bytes(&payload.url, payload.options),
     }
     .map_err(internal_server_error)
 }

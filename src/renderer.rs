@@ -1,4 +1,4 @@
-use headless_chrome::Browser;
+use headless_chrome::{types::PrintToPdfOptions, Browser};
 
 trait EditableTab {
     fn set_content<T: AsRef<str>>(&self, content: T) -> Result<(), anyhow::Error>;
@@ -34,19 +34,27 @@ impl Renderer {
         Self(browser)
     }
 
-    pub fn html_to_bytes(&self, html: &str) -> Result<Vec<u8>, anyhow::Error> {
+    pub fn html_to_bytes(
+        &self,
+        html: &str,
+        options: Option<PrintToPdfOptions>,
+    ) -> Result<Vec<u8>, anyhow::Error> {
         let tab = self.0.new_tab()?;
         tab.set_content(html)?;
 
-        let bytes = tab.print_to_pdf(None)?;
+        let bytes = tab.print_to_pdf(options)?;
         Ok(bytes)
     }
 
-    pub fn url_to_bytes(&self, url: &str) -> Result<Vec<u8>, anyhow::Error> {
+    pub fn url_to_bytes(
+        &self,
+        url: &str,
+        options: Option<PrintToPdfOptions>,
+    ) -> Result<Vec<u8>, anyhow::Error> {
         let tab = self.0.new_tab()?;
         tab.navigate_to(url)?.wait_until_navigated()?;
 
-        let bytes = tab.print_to_pdf(None)?;
+        let bytes = tab.print_to_pdf(options)?;
         Ok(bytes)
     }
 }
