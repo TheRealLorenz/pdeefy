@@ -4,22 +4,33 @@ use headless_chrome::{Browser, LaunchOptions};
 use renderer::Renderer;
 use serde::Deserialize;
 use std::sync::Arc;
+use tower_http::trace::TraceLayer;
 
 mod renderer;
 
+const PORT: u16 = 3000;
+const HOST: &str = "0.0.0.0";
+
 #[tokio::main]
 async fn main() {
-    let browser = Browser::new(LaunchOptions::default_builder().build().unwrap()).unwrap();
+    tracing_subscriber::fmt::init();
+
+    let browser = Browser::new(LaunchOptions::default_builder().build().unwrap())
+        .expect("cannot launch a browser instance");
+
     let renderer = Renderer::new(browser);
 
     let app = Router::new()
         .route("/api/generate", post(generate))
-        .with_state(renderer.into());
+        .with_state(renderer.into())
+        .layer(TraceLayer::new_for_http());
 
-    axum::Server::bind(&"0.0.0.0:3000".parse().unwrap())
+    tracing::info!("listening on {HOST}:{PORT}");
+
+    axum::Server::bind(&format!("{HOST}:{PORT}").parse().unwrap())
         .serve(app.into_make_service())
         .await
-        .unwrap();
+        .expect("server error");
 }
 
 #[derive(Deserialize)]
