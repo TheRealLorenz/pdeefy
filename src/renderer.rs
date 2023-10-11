@@ -1,4 +1,4 @@
-use headless_chrome::{types::PrintToPdfOptions, Browser};
+use headless_chrome::{types::PrintToPdfOptions, Browser, LaunchOptionsBuilder};
 
 trait EditableTab {
     fn set_content<T: AsRef<str>>(&self, content: T) -> Result<(), anyhow::Error>;
@@ -27,11 +27,19 @@ impl EditableTab for headless_chrome::Tab {
 }
 
 #[derive(Clone)]
-pub struct Renderer(Browser);
+pub struct Renderer<'a> {
+    options: LaunchOptionsBuilder<'a>,
+}
 
-impl Renderer {
-    pub fn new(browser: Browser) -> Self {
-        Self(browser)
+impl<'a> Renderer<'a> {
+    pub fn new(options: LaunchOptionsBuilder<'a>) -> Self {
+        Self { options }
+    }
+}
+
+impl Renderer<'_> {
+    fn instance(&self) -> Result<Browser, anyhow::Error> {
+        Browser::new(self.options.build()?)
     }
 
     pub fn html_to_bytes(
@@ -39,7 +47,7 @@ impl Renderer {
         html: &str,
         options: Option<PrintToPdfOptions>,
     ) -> Result<Vec<u8>, anyhow::Error> {
-        let tab = self.0.new_tab()?;
+        let tab = self.instance()?.new_tab()?;
         tab.set_content(html)?;
 
         let bytes = tab.print_to_pdf(options)?;
@@ -51,7 +59,7 @@ impl Renderer {
         url: &str,
         options: Option<PrintToPdfOptions>,
     ) -> Result<Vec<u8>, anyhow::Error> {
-        let tab = self.0.new_tab()?;
+        let tab = self.instance()?.new_tab()?;
         tab.navigate_to(url)?.wait_until_navigated()?;
 
         let bytes = tab.print_to_pdf(options)?;

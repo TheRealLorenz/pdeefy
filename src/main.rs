@@ -1,6 +1,6 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::post, Json, Router};
 use headless_chrome::types::PrintToPdfOptions;
-use headless_chrome::{Browser, LaunchOptions};
+use headless_chrome::LaunchOptions;
 use renderer::Renderer;
 use serde::Deserialize;
 use std::sync::Arc;
@@ -15,10 +15,7 @@ const HOST: &str = "0.0.0.0";
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    let browser = Browser::new(LaunchOptions::default_builder().build().unwrap())
-        .expect("cannot launch a browser instance");
-
-    let renderer = Renderer::new(browser);
+    let renderer = Renderer::new(LaunchOptions::default_builder());
 
     let app = Router::new()
         .route("/api/generate", post(generate))
@@ -53,7 +50,7 @@ enum GeneratePdfRequest {
 }
 
 async fn generate(
-    State(renderer): State<Arc<Renderer>>,
+    State(renderer): State<Arc<Renderer<'_>>>,
     Json(payload): Json<GeneratePdfRequest>,
 ) -> Result<Vec<u8>, impl IntoResponse> {
     match payload {
