@@ -47,7 +47,10 @@ impl Renderer<'_> {
         html: &str,
         options: Option<PrintToPdfOptions>,
     ) -> Result<Vec<u8>, anyhow::Error> {
-        let tab = self.instance()?.new_tab()?;
+        // Should exist until the function end
+        let instance = self.instance()?;
+
+        let tab = instance.new_tab()?;
         tab.set_content(html)?;
 
         let bytes = tab.print_to_pdf(options)?;
@@ -59,7 +62,10 @@ impl Renderer<'_> {
         url: &str,
         options: Option<PrintToPdfOptions>,
     ) -> Result<Vec<u8>, anyhow::Error> {
-        let tab = self.instance()?.new_tab()?;
+        // Should exist until the function end
+        let instance = self.instance()?;
+
+        let tab = instance.new_tab()?;
         tab.navigate_to(url)?.wait_until_navigated()?;
 
         let bytes = tab.print_to_pdf(options)?;
