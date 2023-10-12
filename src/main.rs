@@ -8,12 +8,21 @@ use tower_http::trace::TraceLayer;
 
 mod renderer;
 
-const PORT: u16 = 3000;
+const DEFAULT_PORT: u16 = 3000;
 const HOST: &str = "0.0.0.0";
 
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
+
+    let port = std::env::var("PORT")
+        .ok()
+        .and_then(|port| port.parse::<u16>().ok())
+        .unwrap_or_else(|| {
+            tracing::warn!("Invalid PORT env variable, using {DEFAULT_PORT}");
+
+            DEFAULT_PORT
+        });
 
     let renderer = Renderer::new(LaunchOptions::default_builder());
 
@@ -22,9 +31,9 @@ async fn main() {
         .with_state(renderer.into())
         .layer(TraceLayer::new_for_http());
 
-    tracing::info!("listening on {HOST}:{PORT}");
+    tracing::info!("listening on {HOST}:{port}");
 
-    axum::Server::bind(&format!("{HOST}:{PORT}").parse().unwrap())
+    axum::Server::bind(&format!("{HOST}:{port}").parse().unwrap())
         .serve(app.into_make_service())
         .await
         .expect("server error");
