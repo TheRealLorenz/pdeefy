@@ -1,4 +1,6 @@
-use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::post, Json, Router};
+use axum::{extract::State, routing::post, Json, Router};
+use axum_extra::extract::WithRejection;
+use error::ApiError;
 use headless_chrome::types::PrintToPdfOptions;
 use headless_chrome::LaunchOptions;
 use renderer::Renderer;
@@ -6,6 +8,7 @@ use serde::Deserialize;
 use std::sync::Arc;
 use tower_http::trace::TraceLayer;
 
+mod error;
 mod renderer;
 
 const DEFAULT_PORT: u16 = 3000;
@@ -60,20 +63,14 @@ enum GeneratePdfRequest {
 
 async fn generate(
     State(renderer): State<Arc<Renderer<'_>>>,
-    Json(payload): Json<GeneratePdfRequest>,
-) -> Result<Vec<u8>, impl IntoResponse> {
-    match payload {
+    WithRejection(Json(payload), _): WithRejection<Json<GeneratePdfRequest>, ApiError>,
+) -> Result<Vec<u8>, ApiError> {
+    let bytes = match payload {
         GeneratePdfRequest::RawHtml(payload) => {
-            renderer.html_to_bytes(&payload.html, payload.options)
+            renderer.html_to_bytes(&payload.html, payload.options)?
         }
-        GeneratePdfRequest::Url(payload) => renderer.url_to_bytes(&payload.url, payload.options),
-    }
-    .map_err(internal_server_error)
-}
+        GeneratePdfRequest::Url(payload) => renderer.url_to_bytes(&payload.url, payload.options)?,
+    };
 
-fn internal_server_error<E: AsRef<dyn std::error::Error>>(error: E) -> impl IntoResponse {
-    (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        error.as_ref().to_string(),
-    )
+    Ok(bytes)
 }
