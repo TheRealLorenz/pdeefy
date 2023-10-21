@@ -16,7 +16,7 @@ RUN cargo build --release
 FROM zenika/alpine-chrome AS runtime
 WORKDIR /app
 
-COPY --from=builder /app/target/release/html2pdf-rust-api /usr/local/bin
+COPY --from=builder /app/target/release/pdeefy /usr/local/bin
 
-ENV RUST_LOG=tower_http=trace,info
-ENTRYPOINT ["html2pdf-rust-api"]
+ENV RUST_LOG=info
+ENTRYPOINT ["pdeefy"]

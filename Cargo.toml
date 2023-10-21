@@ -1,5 +1,5 @@
 [package]
-name = "html2pdf-rust-api"
+name = "pdeefy"
 version = "0.1.0"
 edition = "2021"
 
