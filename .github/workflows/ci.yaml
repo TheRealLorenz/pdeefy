@@ -7,6 +7,9 @@ on:
     tags:
       - 'v*.*.*'
 
+env:
+  REGISTRY_IMAGE: thereallorenz/pdeefy
+
 jobs:
   build:
     runs-on: ubuntu-latest
