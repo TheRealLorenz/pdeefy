@@ -9,6 +9,10 @@ The project's main goal is to provide a lightweight image for html rendering. Yo
 - Build the image yourself using the [Dockerfile](./Dockerfile).
 - View the available builds on [docker-hub](https://hub.docker.com/repository/docker/thereallorenz/pdeefy/general).
 
+## Compose file
+
+The repository contains [compose.yaml](./compose.yaml) for quick deployment.
+
 ## Endpoint
 
 It listens for POSTs on port 3000, path /api/generate

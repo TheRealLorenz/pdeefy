@@ -1,0 +1,9 @@
+version: '3'
+services:
+  pdeefy:
+    image: thereallorenz/pdeefy # Use the image on dockerhub
+    # build: .                  # or build it yourself
+    container_name: pdeefy
+    ports:
+      - 3000:3000
+    restart: unless-stopped
