@@ -13,7 +13,7 @@ RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
 RUN cargo build --release
 
-FROM zenika/alpine-chrome AS runtime
+FROM zenika/alpine-chrome:117 AS runtime
 WORKDIR /app
 
 COPY --from=builder /app/target/release/pdeefy /usr/local/bin
