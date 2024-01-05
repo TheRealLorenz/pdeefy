@@ -3,7 +3,7 @@ use serde::Serialize;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum ApiError {
+pub enum Api {
     #[error(transparent)]
     JsonExtractorRejection(#[from] JsonRejection),
     #[error(transparent)]
@@ -11,19 +11,19 @@ pub enum ApiError {
 }
 
 #[derive(Serialize)]
-pub struct ErrorMessage {
+pub struct Message {
     message: String,
 }
 
-impl IntoResponse for ApiError {
+impl IntoResponse for Api {
     fn into_response(self) -> axum::response::Response {
         let (status, message) = match self {
-            ApiError::JsonExtractorRejection(json_rejection) => {
+            Api::JsonExtractorRejection(json_rejection) => {
                 (json_rejection.status(), json_rejection.body_text())
             }
-            ApiError::InternalServerError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+            Api::InternalServerError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
         };
 
-        (status, Json(ErrorMessage { message })).into_response()
+        (status, Json(Message { message })).into_response()
     }
 }

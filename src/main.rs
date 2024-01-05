@@ -1,9 +1,7 @@
 use axum::{extract::State, routing::post, Json, Router};
 use axum_extra::extract::WithRejection;
-use error::ApiError;
 use headless_chrome::types::PrintToPdfOptions;
 use headless_chrome::LaunchOptions;
-use renderer::Renderer;
 use serde::Deserialize;
 use std::sync::Arc;
 use tower_http::trace::TraceLayer;
@@ -27,7 +25,8 @@ async fn main() {
             DEFAULT_PORT
         });
 
-    let renderer = Renderer::new(LaunchOptions::default_builder());
+    let renderer =
+        renderer::SingleInstance::new(LaunchOptions::default_builder()).expect("renderer");
 
     let app = Router::new()
         .route("/api/generate", post(generate))
@@ -62,9 +61,9 @@ enum GeneratePdfRequest {
 }
 
 async fn generate(
-    State(renderer): State<Arc<Renderer<'_>>>,
-    WithRejection(Json(payload), _): WithRejection<Json<GeneratePdfRequest>, ApiError>,
-) -> Result<Vec<u8>, ApiError> {
+    State(renderer): State<Arc<renderer::SingleInstance>>,
+    WithRejection(Json(payload), _): WithRejection<Json<GeneratePdfRequest>, error::Api>,
+) -> Result<Vec<u8>, error::Api> {
     let bytes = match payload {
         GeneratePdfRequest::RawHtml(payload) => {
             renderer.html_to_bytes(&payload.html, payload.options)?

@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use headless_chrome::{types::PrintToPdfOptions, Browser, LaunchOptionsBuilder};
 
 trait EditableTab {
@@ -26,20 +28,15 @@ impl EditableTab for headless_chrome::Tab {
     }
 }
 
-#[derive(Clone)]
-pub struct Renderer<'a> {
-    options: LaunchOptionsBuilder<'a>,
+pub struct SingleInstance {
+    instance: Browser,
 }
 
-impl<'a> Renderer<'a> {
-    pub fn new(options: LaunchOptionsBuilder<'a>) -> Self {
-        Self { options }
-    }
-}
-
-impl Renderer<'_> {
-    fn instance(&self) -> Result<Browser, anyhow::Error> {
-        Browser::new(self.options.build()?)
+impl SingleInstance {
+    pub fn new(mut options: LaunchOptionsBuilder<'_>) -> Result<Self, anyhow::Error> {
+        Ok(Self {
+            instance: Browser::new(options.idle_browser_timeout(Duration::MAX).build()?)?,
+        })
     }
 
     pub fn html_to_bytes(
@@ -47,10 +44,7 @@ impl Renderer<'_> {
         html: &str,
         options: Option<PrintToPdfOptions>,
     ) -> Result<Vec<u8>, anyhow::Error> {
-        // Should exist until the function end
-        let instance = self.instance()?;
-
-        let tab = instance.new_tab()?;
+        let tab = self.instance.new_tab()?;
         tab.set_content(html)?;
 
         let bytes = tab.print_to_pdf(options)?;
@@ -59,14 +53,11 @@ impl Renderer<'_> {
 
     pub fn url_to_bytes(
         &self,
-        url: &str,
+        html: &str,
         options: Option<PrintToPdfOptions>,
     ) -> Result<Vec<u8>, anyhow::Error> {
-        // Should exist until the function end
-        let instance = self.instance()?;
-
-        let tab = instance.new_tab()?;
-        tab.navigate_to(url)?.wait_until_navigated()?;
+        let tab = self.instance.new_tab()?;
+        tab.set_content(html)?;
 
         let bytes = tab.print_to_pdf(options)?;
         Ok(bytes)
