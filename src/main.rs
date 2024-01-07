@@ -1,3 +1,4 @@
+use axum::http::{header, HeaderName};
 use axum::{extract::State, routing::post, Json, Router};
 use axum_extra::extract::WithRejection;
 use headless_chrome::types::PrintToPdfOptions;
@@ -63,7 +64,7 @@ enum GeneratePdfRequest {
 async fn generate(
     State(renderer): State<Arc<renderer::SingleInstance>>,
     WithRejection(Json(payload), _): WithRejection<Json<GeneratePdfRequest>, error::Api>,
-) -> Result<Vec<u8>, error::Api> {
+) -> Result<([(HeaderName, &'static str); 1], Vec<u8>), error::Api> {
     let bytes = match payload {
         GeneratePdfRequest::RawHtml(payload) => {
             renderer.html_to_bytes(&payload.html, payload.options)?
@@ -71,5 +72,5 @@ async fn generate(
         GeneratePdfRequest::Url(payload) => renderer.url_to_bytes(&payload.url, payload.options)?,
     };
 
-    Ok(bytes)
+    Ok(([(header::CONTENT_TYPE, "application/pdf")], bytes))
 }
